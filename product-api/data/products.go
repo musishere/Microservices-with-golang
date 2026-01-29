@@ -1,6 +1,10 @@
 package data
 
-import "time"
+import (
+	"encoding/json"
+	"io"
+	"time"
+)
 
 // Provides a structure for the api product
 type Product struct {
@@ -14,7 +18,17 @@ type Product struct {
 	DeletedOn   string  `json:"-"`
 }
 
-// Staticly defined data
+type Products []*Product
+
+func (p *Products) ToJson(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(p)
+}
+
+func GetProducts() Products {
+	return productList
+}
+
 var productList = []*Product{
 	&Product{
 		ID:          1,
