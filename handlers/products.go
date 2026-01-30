@@ -27,7 +27,7 @@ func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusMethodNotAllowed)
 }
 
-func (p *Products) getProducts(rw http.ResponseWriter, r *http.Request) {
+func (p *Products) getProducts(rw http.ResponseWriter, _ *http.Request) {
 	lp := data.GetProducts()
 
 	err := lp.ToJson(rw)
