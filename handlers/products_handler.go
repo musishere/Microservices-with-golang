@@ -3,9 +3,9 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/musishere/microservices/product-api/data"
 )
 
@@ -17,42 +17,7 @@ func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
-func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		p.getProducts(rw, r)
-		return
-	}
-
-	if r.Method == http.MethodPost {
-		p.addProduct(rw, r)
-	}
-
-	if r.Method == http.MethodPut {
-		p.l.Println("Put Request")
-		// expect the id in the URI
-		reg := regexp.MustCompile(`/([0-9]+)`) //regex
-		g := reg.FindAllStringSubmatch(r.URL.Path, -1)
-
-		if len(g) != 1 {
-			http.Error(rw, "Invalid URI", http.StatusBadRequest)
-			return
-		}
-		if len(g[0]) != 2 {
-			http.Error(rw, "Invalid URI", http.StatusBadRequest)
-			return
-		}
-		idString := g[0][1]
-		id, _ := strconv.Atoi(idString)
-		p.l.Println("Got id: ", id)
-
-		p.updateProducts(id, rw, r)
-	}
-
-	// catch all
-	rw.WriteHeader(http.StatusMethodNotAllowed)
-}
-
-func (p *Products) getProducts(rw http.ResponseWriter, _ *http.Request) {
+func (p *Products) GetProducts(rw http.ResponseWriter, _ *http.Request) {
 	lp := data.GetProducts()
 
 	err := lp.ToJson(rw)
@@ -62,9 +27,10 @@ func (p *Products) getProducts(rw http.ResponseWriter, _ *http.Request) {
 
 }
 
-func (p *Products) addProduct(rw http.ResponseWriter, r *http.Request) {
+func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Handler Post Products")
 
+	// making a variable of product struct type to store
 	prod := &data.Product{}
 
 	// Attempt to decode the product data from the request body into the prod object
@@ -78,12 +44,19 @@ func (p *Products) addProduct(rw http.ResponseWriter, r *http.Request) {
 
 	data.AddProduct(prod)
 }
-func (p Products) updateProducts(id int, rw http.ResponseWriter, r *http.Request) {
+
+func (p Products) UpdateProducts(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(rw, "Unable to convert id", http.StatusBadRequest)
+		return
+	}
 	p.l.Println("Handle PUT Product")
 
 	prod := &data.Product{}
 
-	err := prod.FromJson(r.Body)
+	err = prod.FromJson(r.Body)
 	if err != nil {
 		http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
 	}
